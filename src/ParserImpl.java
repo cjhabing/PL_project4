@@ -1,24 +1,46 @@
-
+import java.util.List;
 public class ParserImpl extends Parser {
 
-    /*
-     * Implements a recursive-descent parser for the following CFG:
-     * 
-     * T -> F AddOp T              { if ($2.type == TokenType.PLUS) { $$ = new PlusExpr($1,$3); } else { $$ = new MinusExpr($1, $3); } }
-     * T -> F                      { $$ = $1; }
-     * F -> Lit MulOp F            { if ($2.type == TokenType.Times) { $$ = new TimesExpr($1,$3); } else { $$ = new DivExpr($1, $3); } }
-     * F -> Lit                    { $$ = $1; }
-     * Lit -> NUM                  { $$ = new FloatExpr(Float.parseFloat($1.lexeme)); }
-     * Lit -> LPAREN T RPAREN      { $$ = $2; }
-     * AddOp -> PLUS               { $$ = $1; }
-     * AddOp -> MINUS              { $$ = $1; }
-     * MulOp -> TIMES              { $$ = $1; }
-     * MulOp -> DIV                { $$ = $1; }
-     */
-    @Override
-    public Expr do_parse() throws Exception {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'do_parse'");
+    public ParserImpl() {
+        super();
     }
 
+    @Override
+    public Expr do_parse() throws Exception {
+        return parseterm();
+    }
+
+    private Expr parseterm() throws Exception {
+    Expr factor = parsefactor();
+    if (peek(TokenType.PLUS, 0) || peek(TokenType.MINUS, 0)) {
+        Token token = consume(peek(TokenType.PLUS, 0) ? TokenType.PLUS : TokenType.MINUS);
+        Expr expression = parseterm();
+        return token.ty == TokenType.PLUS ? new PlusExpr(factor, expression) : new MinusExpr(factor, expression);
+    }
+    return factor;
+    }
+
+
+    private Expr parsefactor() throws Exception {
+    Expr literal = parseliteral();
+    if (peek(TokenType.TIMES, 0) || peek(TokenType.DIV, 0)) {
+    Token token = consume(peek(TokenType.TIMES, 0) ? TokenType.TIMES : TokenType.DIV);
+    Expr expression1 = parsefactor();
+    return token.ty == TokenType.TIMES ? new TimesExpr(literal, expression1) : new DivExpr(literal, expression1);
+    }
+    return literal;
+
+    }
+
+    private Expr parseliteral() throws Exception {
+        if (peek(TokenType.NUM, 0)) {
+    return new FloatExpr(Float.parseFloat(consume(TokenType.NUM).lexeme));
+    } else if (peek(TokenType.LPAREN, 0)) {
+    consume(TokenType.LPAREN);
+    Expr Expression3 = parseterm();
+    consume(TokenType.RPAREN);
+    return Expression3;
+    }
+    throw new RuntimeException("Encountered unexpected token: " + peek(TokenType.NUM, 0));
+    }
 }
